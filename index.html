@@ -3,22 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Mesh Chat</title>
+    <title>Aura Mesh - Next Gen AI Platform</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #090A0F; color: white; font-family: sans-serif; text-align: center; padding: 50px; }
-        .box { border: 1px solid #00F2FE; padding: 30px; border-radius: 15px; display: inline-block; background: rgba(255,255,255,0.05); }
-        h1 { color: #00F2FE; }
-        input { padding: 10px; border-radius: 5px; border: none; width: 200px; }
-        button { padding: 10px 20px; background: #00F2FE; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        :root {
+            --bg-dark: #06070d;
+            --panel-glass: rgba(18, 20, 32, 0.6);
+            --neon-primary: #00F2FE;
+            --neon-secondary: #4FACFE;
+            --accent-purple: #7F00FF;
+            --text-main: #ffffff;
+            --text-muted: #8A8D9F;
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; background-image: radial-gradient(circle at 10% 20%, rgba(127, 0, 255, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(0, 242, 254, 0.12) 0%, transparent 40%); }
+        
+        /* Main Container layout */
+        .app-container { width: 95vw; height: 90vh; max-width: 1400px; display: flex; background: var(--panel-glass); backdrop-filter: blur(25px); border-radius: 24px; border: 1px solid var(--glass-border); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); overflow: hidden; }
+        
+        /* Sidebar Navigation */
+        .sidebar-nav { width: 80px; background: rgba(10, 11, 18, 0.5); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; padding: 25px 0; justify-content: space-between; }
+        .nav-logo { color: var(--neon-primary); font-size: 28px; filter: drop-shadow(0 0 8px var(--neon-primary)); margin-bottom: 30px; }
+        .nav-items { display: flex; flex-direction: column; gap: 25px; }
+        .nav-btn { color: var(--text-muted); font-size: 20px; cursor: pointer; transition: 0.3s; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+        .nav-btn:hover, .nav-btn.active { color: var(--neon-primary); background: rgba(0, 242, 254, 0.1); border: 1px solid rgba(0, 242, 254, 0.2); }
+        .nav-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--neon-secondary); }
+
+        /* Left Panel - Chat List / AI Console */
+        .left-panel { width: 350px; border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; background: rgba(15, 17, 26, 0.3); }
+        .panel-header { padding: 20px; border-bottom: 1px solid var(--glass-border); }
+        .panel-header h2 { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; background: linear-gradient(to right, #fff, var(--text-muted)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .search-wrapper { position: relative; margin-top: 15px; }
+        .search-wrapper i { position: absolute; left: 12px; top: 12px; color: var(--text-muted); }
+        .search-box { width: 100%; padding: 10px 10px 10px 38px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 12px; color: white; outline: none; transition: 0.3s; }
+        .search-box:focus { border-color: var(--neon-primary); box-shadow: 0 0 10px rgba(0, 242, 254, 0.2); }
+
+        .items-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .chat-item { display: flex; align-items: center; gap: 15px; padding: 12px; border-radius: 16px; cursor: pointer; transition: 0.2s; margin-bottom: 5px; border: 1px solid transparent; }
+        .chat-item:hover, .chat-item.active { background: rgba(255,255,255,0.04); border-color: var(--glass-border); }
+        .item-avatar-wrap { position: relative; }
+        .item-avatar { width: 48px; height: 48px; border-radius: 14px; background: #232635; object-fit: cover; }
+        .status-dot { width: 10px; height: 10px; background: #00FF87; border-radius: 50%; position: absolute; bottom: -2px; right: -2px; border: 2px solid var(--bg-dark); }
+        .item-info { flex: 1; min-width: 0; }
+        .item-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .item-name { font-weight: 600; font-size: 15px; }
+        .item-time { font-size: 11px; color: var(--text-muted); }
+        .item-preview { font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Main Chat Window */
+        .chat-window { flex: 1; display: flex; flex-direction: column; background: rgba(10, 11, 18, 0.2); }
+        .chat-window-header { padding: 15px 25px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; background: rgba(10, 11, 18, 0.4); }
+        .active-user-info { display: flex; align-items: center; gap: 15px; }
+        .active-user-name { font-weight: 600; font-size: 16px; }
+        .active-user-status { font-size: 12px; color: var(--neon-primary); }
+        .header-actions { display: flex; gap: 20px; font-size: 18px; color: var(--text-muted); }
+        .header-actions i { cursor: pointer; transition: 0.2s; }
+        .header-actions i:hover { color: var(--neon-primary); }
+
+        /* Messages Area */
+        .messages-container { flex: 1; overflow-y: auto; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .msg-row { display: flex; width: 100%; }
+        .msg-row.incoming { justify-content: flex-start; }
+        .msg-row.outgoing { justify-content: flex-start; flex-direction: row-reverse; }
+        .message-bubble { max-width: 60%; padding: 14px 18px; border-radius: 18px; font-size: 14px; line-height: 1.5; position: relative; }
+        .incoming .message-bubble { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-top-left-radius: 4px; }
+        .outgoing .message-bubble { background: linear-gradient(135deg, rgba(79,172,254,0.2) 0%, rgba(0,242,254,0.2) 100%); border: 1px solid rgba(0,242,254,0.3); border-top-right-radius: 4px; }
+        .msg-meta { font-size: 10px; color: var(--text-muted); margin-top: 5px; text-align: right; display: block; }
+        
+        /* AI Chip/Badge inside chat */
+        .ai-badge { background: linear-gradient(to right, var(--neon-primary), var(--accent-purple)); padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: bold; color: black; margin-right: 5px; display: inline-block; }
+
+        /* Input Area */
+        .input-bar { padding: 20px 25px; border-top: 1px solid var(--glass-border); display: flex; align-items: center; gap: 15px; background: rgba(10, 11, 18, 0.4); }
+        .input-bar i { color: var(--text-muted); font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .input-bar i:hover { color: var(--neon-primary); }
+        .chat-input-field { flex: 1; padding: 12px 20px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 14px; color: white; outline: none; }
+        .chat-input-field:focus { border-color: var(--neon-secondary); }
+        
+        /* AI Sidebar Features Console */
+        .ai-panel { width: 280px; border-left: 1px solid var(--glass-border); padding: 20px; background: rgba(15, 17, 26, 0.4); display: flex; flex-direction: column; gap: 20px; }
+        .ai-header { display: flex; align-items: center; gap: 10px; color: var(--neon-primary); font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .ai-card { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 16px; padding: 15px; cursor: pointer; transition: 0.3s; }
+        .ai-card:hover { border-color: var(--accent-purple); background: rgba(127, 0, 255, 0.05); transform: translateY(-2px); }
+        .ai-card-title { font-size: 14px; font-weight: 600; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
+        .ai-card-title i { color: var(--neon-primary); }
+        .ai-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+        /* Typing indicator styling */
+        .typing-indicator { display: flex; gap: 4px; padding: 8px; align-items: center; }
+        .typing-dot { width: 6px; height: 6px; background: var(--neon-primary); border-radius: 50%; animation: wave 1.3s infinite ease-in-out; }
+        .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes wave { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>Aura AI Chat Network</h1>
-        <p>Bhai, aapka website ab live ho chuka hai! 😎</p>
-        <input type="text" placeholder="Type a message...">
-        <button onclick="alert('Message Sent (Demo)!')">Send</button>
+
+    <div class="app-container">
+        <!-- 1. LEFTMOST NAVIGATION RAIL -->
+        <div class="sidebar-nav">
+            <div class="nav-top">
+                <div class="nav-logo"><i class="fa-solid asleep fa-circle-nodes"></i></div>
+                <div class="nav-items">
+                    <div class="nav-btn active"><i class="fa-regular fa-comment-dots"></i></div>
+                    <div class="nav-btn"><i class="fa-solid fa-users-rectangle"></i></div>
+                    <div class="nav-btn"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <div class="nav-btn"><i class="fa-regular fa-compass"></i></div>
+                </div>
+            </div>
+            <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AuraMaster" alt="User Profile" class="nav-avatar">
+        </div>
+
+        <!-- 2. CHAT LIST PANEL -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <h2>Aura Mesh Channels</h2>
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" class="search-box" placeholder="Secure search mesh...">
+                </div>
+            </div>
+            <div class="items-list">
+                <!-- Chat 1 -->
+                <div class="chat-item active">
+                    <div class="item-avatar-wrap">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=AuraCore" class="item-avatar">
+                        <div class="status-dot"></div>
+                    </div>
+                    <div class="item-info">
+                        <div class="item-meta">
+                            <span class="item-name">Aura Matrix AI</span>
+                            <span class="item-time">Now</span>
+                        </div>
+                        <span class="item-preview">System fully functional. How can I assist you today?</span>
+                    </div>
+                </div>
+                <!-- Chat 2 -->
+                <div class="chat-item">
+                    <div class="item-avatar-wrap">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" class="item-avatar">
+                        <div class="status-dot"></div>
+                    </div>
+                    <div class="item-info">
+                        <div class="item-meta">
+                            <span class="item-name">Alex (Lead Dev)</span>
+                            <span class="item-time">12 Min ago</span>
+                        </div>
+                        <span class="item-preview">Bhai, security codes push kar diye hain check kar le.</span>
+                    </div>
+                </div>
+                <!-- Chat 3 -->
+                <div class="chat-item">
+                    <div class="item-avatar-wrap">
+                        <img src="https://api.dicebear.com/7.x/shapes/svg?seed=Alpha" class="item-avatar">
+                    </div>
+                    <div class="item-info">
+                        <div class="item-meta">
+                            <span class="item-name">Crypto Alpha Community</span>
+                            <span class="item-time">2 Hrs ago</span>
+                        </div>
+                        <span class="item-preview">Broadcast: Market analysis summary update available.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. MAIN CONVERSATION INTERFACE -->
+        <div class="chat-window">
+            <div class="chat-window-header">
+                <div class="active-user-info">
+                    <div class="active-user-name">Aura Matrix AI</div>
+                    <div class="active-user-status"><i class="fa-solid fa-circle-check"></i> E2E Encrypted Node</div>
+                </div>
+                <div class="header-actions">
+                    <i class="fa-solid fa-phone" onclick="alert('Voice Call Feature Initializing Protocol...')"></i>
+                    <i class="fa-solid fa-video" onclick="alert('Secure Video Node Handshake Initiated...')"></i>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div class="messages-container" id="msgContainer">
+                <div class="msg-row incoming">
+                    <div class="message-bubble">
+                        Hello! Welcome to the premium system core interface. This dashboard features full 60FPS fluid CSS layers and a Next-Gen Glassmorphic system identity.
+                        <span class="msg-meta">12:01 PM</span>
+                    </div>
+                </div>
+                <div class="msg-row outgoing">
+                    <div class="message-bubble">
+                        Bhai, are the advanced AI features simulated right inside this interface?
+                        <span class="msg-meta">12:04 PM</span>
+                    </div>
+                </div>
+                <div class="msg-row incoming">
+                    <div class="message-bubble">
+                        <span class="ai-badge"><i class="fa-solid fa-sparkles"></i> AI Mesh</span>Yes! Check out the interactive AI processing suite on your right dashboard panel.
+                        <span class="msg-meta">12:05 PM</span>
+                    </div>
+                </div>
+                
+                <!-- Simulated Dynamic Content Row -->
+                <div class="msg-row incoming" id="typingRow" style="display:none;">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="input-bar">
+                <i class="fa-regular fa-face-smile"></i>
+                <i class="fa-solid fa-paperclip"></i>
+                <input type="text" class="chat-input-field" id="chatInput" placeholder="Secure input messaging..." onkeydown="if(event.key === 'Enter') sendMessage()">
+                <i class="fa-solid fa-paper-plane" style="color: var(--neon-primary);" onclick="sendMessage()"></i>
+            </div>
+        </div>
+
+        <!-- 4. RIGHT-HAND ADVANCED AI CONSOLE -->
+        <div class="ai-panel">
+            <div class="ai-header">
+                <i class="fa-solid fa-brain"></i> AI Engine v4.0
+            </div>
+            
+            <div class="ai-card" onclick="triggerAIAction('Summarize Chat')">
+                <div class="ai-card-title"><i class="fa-solid fa-list-check"></i> Smart Chat Summary</div>
+                <div class="ai-card-desc">Lambe text conversations ko scan karke main points short summarize karein.</div>
+            </div>
+
+            <div class="ai-card" onclick="triggerAIAction('Tone Rewrite')">
+                <div class="ai-card-title"><i class="fa-solid fa-pen-fancy"></i> AI Message Rewrite</div>
+                <div class="ai-card-desc">Apne messages ko instantly Formal, Funny, ya Professional tones me change karein.</div>
+            </div>
+
+            <div class="ai-card" onclick="triggerAIAction('Realtime Translation')">
+                <div class="ai-card-title"><i class="fa-solid fa-language"></i> Real-Time Translate</div>
+                <div class="ai-card-desc">Bina copy-paste kiye aane wale messages ko instantly apni language me translate karein.</div>
+            </div>
+
+            <div class="ai-card" onclick="triggerAIAction('Sticker Generation')">
+                <div class="ai-card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Prompt Sticker Gen</div>
+                <div class="ai-card-desc">Text likh kar custom animations aur futuristic high-fidelity stickers banayein.</div>
+            </div>
+        </div>
     </div>
+
+    <!-- Interactive Layer Event Engine JavaScript -->
+    <script>
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const container = document.getElementById('msgContainer');
+            const typingRow = document.getElementById('typingRow');
+            
+            if(input.value.trim() === '') return;
+
+            // Display user message
+            const userRow = document.createElement('div');
+            userRow.className = 'msg-row outgoing';
+            userRow.innerHTML = `<div class="message-bubble">${input.value}<span class="msg-meta">Just now</span></div>`;
+            container.insertBefore(userRow, typingRow);
+            
+            const currentMsg = input.value;
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            // Trigger simulated AI auto-reply pipeline
+            setTimeout(() => {
+                typingRow.style.display = 'flex';
+                container.scrollTop = container.scrollHeight;
+            }, 600);
+
+            setTimeout(() => {
+                typingRow.style.display = 'none';
+                const aiRow = document.createElement('div');
+                aiRow.className = 'msg-row incoming';
+                aiRow.innerHTML = `<div class="message-bubble"><span class="ai-badge"><i class="fa-solid fa-sparkles"></i> AI Response</span>Processed: "${currentMsg}". Custom sandbox environment operational parameters verified successfully. <span class="msg-meta">Just now</span></div>`;
+                container.insertBefore(aiRow, typingRow);
+                container.scrollTop = container.scrollHeight;
+            }, 2000);
+        }
+
+        function triggerAIAction(actionName) {
+            alert(`AI Network Command Issued: [${actionName}] is analyzing the current node data payload...`);
+        }
+    </script>
 </body>
 </html>
-
